@@ -140,3 +140,47 @@ class Renderer:
         gl.glBindVertexArray(self.vao)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, 6)
         gl.glBindVertexArray(0)
+
+    def draw_ui_sprite(self, texture_name: str, x: float, y: float, w: float, h: float, 
+                        uv_x: float = 0.0, uv_y: float = 0.0, uv_w: float = 1.0, uv_h: float = 1.0) -> None:
+        """Draws a sprite without camera transformation (UI layer)."""
+        self.shader.use()
+        
+        projection = self._get_ortho(0.0, self.screen_width, self.screen_height, 0.0)
+        # Identity view matrix for UI
+        view = [
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0
+        ]
+        model = self._get_model_matrix(round(x), round(y), round(w), round(h))
+        
+        self.shader.set_mat4("projection", (ctypes.c_float * 16)(*projection))
+        self.shader.set_mat4("view", (ctypes.c_float * 16)(*view))
+        self.shader.set_mat4("model", (ctypes.c_float * 16)(*model))
+        
+        vertices = [
+             0.0,  1.0,   uv_x, uv_y,
+             1.0,  0.0,   uv_x + uv_w, uv_y + uv_h,
+             0.0,  0.0,   uv_x, uv_y + uv_h,
+             
+             0.0,  1.0,   uv_x, uv_y,
+             1.0,  1.0,   uv_x + uv_w, uv_y,
+             1.0,  0.0,   uv_x + uv_w, uv_y + uv_h
+        ]
+        
+        vertex_data = (ctypes.c_float * len(vertices))(*vertices)
+        
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.vbo)
+        gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, len(vertices) * 4, vertex_data)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+        
+        gl.glActiveTexture(gl.GL_TEXTURE0)
+        if texture_name in self.textures:
+            gl.glBindTexture(gl.GL_TEXTURE_2D, self.textures[texture_name]["id"])
+        
+        gl.glBindVertexArray(self.vao)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, 6)
+        gl.glBindVertexArray(0)
+

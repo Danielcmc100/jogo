@@ -21,6 +21,7 @@ class Window:
         
         self.shader = Shader()
         self.renderer = Renderer(self.shader, logical_w, logical_h)
+        self.events: list[pygame.event.Event] = []
         
     def clear(self) -> None:
         gl.glClearColor(0.1, 0.1, 0.1, 1.0)
@@ -30,11 +31,11 @@ class Window:
         pygame.display.flip()
         
     def poll_events(self) -> list[pygame.event.Event]:
-        events = pygame.event.get()
-        for event in events:
+        self.events = pygame.event.get()
+        for event in self.events:
             if event.type == pygame.QUIT:
                 self.running = False
-        return events
+        return self.events
         
     def tick(self, fps: int = 60) -> None:
         self.dt = self.clock.tick(fps) / 1000.0

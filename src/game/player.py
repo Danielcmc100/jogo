@@ -10,6 +10,7 @@ from src.game.settings import (
     PLAYER_TEX_WIDTH,
     PLAYER_TEX_HEIGHT,
     PLAYER_ANIMATIONS,
+    PLAYER_MAX_HP,
 )
 
 
@@ -31,6 +32,9 @@ class Player:
         self.state = "idle"
         self.anim_timer = 0.0
         self.current_frame = 0
+
+        self.max_hp = PLAYER_MAX_HP
+        self.hp = PLAYER_MAX_HP
 
     def get_rect(self) -> Rect:
         # Give a little offset to center the hitbox horizontally
@@ -132,3 +136,13 @@ class Player:
             uv_w,
             uv_h,
         )
+
+    def take_damage(self, amount: int) -> None:
+        self.hp -= amount
+        if self.hp < 0:
+            self.hp = 0
+            
+    def heal(self, amount: int) -> None:
+        self.hp += amount
+        if self.hp > self.max_hp:
+            self.hp = self.max_hp
