@@ -1,5 +1,5 @@
 from src.engine.renderer import Renderer
-from src.engine.physics import Rect, check_collision
+from src.engine.physics import Rect, Collider, check_collision
 from src.game.settings import (
     FIRE_FRAME_WIDTH,
     FIRE_FRAME_HEIGHT,
@@ -44,16 +44,19 @@ class Fireball:
             "h": float(FIRE_FRAME_HEIGHT),
         }
 
-    def update(self, dt: float, tiles: list[Rect]) -> None:
+    def update(self, dt: float, tiles: list[Collider]) -> None:
         if not self.alive:
             return
 
         # Movimento
         self.x += self.vx * dt
 
-        # Colisão com tiles → destruir
+        # Colisão com tiles sólidos → destruir
+        # (ignora one_way: projéteis passam por plataformas)
         fb_rect = self.get_rect()
         for tile in tiles:
+            if tile.get("one_way", False):
+                continue
             if check_collision(fb_rect, tile):
                 self.alive = False
                 return

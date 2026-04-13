@@ -1,6 +1,6 @@
 import math
 from src.engine.renderer import Renderer
-from src.engine.physics import Rect, check_collision
+from src.engine.physics import Rect, Collider, check_collision
 from src.game.fireball import Fireball
 from src.game.settings import (
     GRAVITY,
@@ -108,36 +108,41 @@ class Snake:
     # espelhando a lógica do Player para comportamento idêntico.
     # ------------------------------------------------------------------
 
-    def _resolve_x_collision(self, tiles: list[Rect]) -> None:
+    def _resolve_x_collision(self, tiles: list[Collider]) -> None:
         snake_rect = self.get_rect()
         for tile in tiles:
+            # Plataformas one-way não bloqueiam lateralmente
+            if tile.get("one_way", False):
+                continue
             if check_collision(snake_rect, tile):
                 if self.vx > 0:
                     self.x = tile["x"] - SNAKE_FRAME_WIDTH
-                    # Bate na parede → inverte patrulha; não afeta perseguição
-                    # (vx será redefinido logo abaixo se em perseguição)
                     self.vx = -abs(self.vx)
                 elif self.vx < 0:
                     self.x = tile["x"] + tile["w"]
                     self.vx = abs(self.vx)
                 snake_rect = self.get_rect()
 
-    def _resolve_y_collision(self, tiles: list[Rect]) -> None:
+    def _resolve_y_collision(self, tiles: list[Collider]) -> None:
         self.is_grounded = False
         snake_rect = self.get_rect()
         for tile in tiles:
+            if tile.get("one_way", False):
+                # One-way: só colide descendo
+                if self.vy <= 0:
+                    continue
+                if (snake_rect["y"] + snake_rect["h"] - self.vy * 0.016) > tile["y"]:
+                    continue
             if check_collision(snake_rect, tile):
                 if self.vy > 0:
-                    # Pousando em cima do tile
                     self.y = tile["y"] - SNAKE_FRAME_HEIGHT
                     self.is_grounded = True
                 elif self.vy < 0:
-                    # Bateu na parte de baixo do tile
                     self.y = tile["y"] + tile["h"]
                 self.vy = 0.0
                 snake_rect = self.get_rect()
 
-    def _edge_ray(self, tiles: list[Rect]) -> bool:
+    def _edge_ray(self, tiles: list[Collider]) -> bool:
         """Raycast vertical disparado 1px abaixo dos pés, na borda dianteira.
 
         Retorna True se há chão à frente (ray colidiu com um tile).
@@ -180,7 +185,7 @@ class Snake:
     def update(
         self,
         dt: float,
-        tiles: list[Rect],
+        tiles: list[Collider],
         player_x: float,
         player_y: float,
         player_rect: Rect,
