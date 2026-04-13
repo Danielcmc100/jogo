@@ -22,23 +22,24 @@ player_y = 50
 
 bullets = []
 
+
 # =====================
 # DRAW FUNCTIONS
 # =====================
 def draw_player(x, y):
     glColor3f(1, 1, 1)
     glBegin(GL_QUADS)
-    glVertex2f(x-20, y)
-    glVertex2f(x+20, y)
-    glVertex2f(x+20, y+20)
-    glVertex2f(x-20, y+20)
+    glVertex2f(x - 20, y)
+    glVertex2f(x + 20, y)
+    glVertex2f(x + 20, y + 20)
+    glVertex2f(x - 20, y + 20)
     glEnd()
+
 
 # =====================
 # GAME LOOP
 # =====================
 while True:
-
     # -------- INPUT --------
     for event in pygame.event.get():
         if event.type == QUIT:
