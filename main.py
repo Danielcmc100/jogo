@@ -61,7 +61,7 @@ def main():
                 # Knockback: empurra o player para longe da cobra
                 snake_cx = snake.x + snake.get_rect()["w"] / 2
                 player.vx = 150.0 if player.x + player.w / 2 >= snake_cx else -150.0
-                player.vy = -200.0  # pequeno salto
+                player.take_damage(1)
 
         # Camera Follow Player
         # We want the player roughly in the center
