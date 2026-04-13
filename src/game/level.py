@@ -6,6 +6,8 @@ from src.game.settings import (
     TILE_FRAME_HEIGHT,
     TILE_TEX_WIDTH,
     TILE_TEX_HEIGHT,
+    SOLID_TILE_COL,
+    SOLID_TILE_ROW,
 )
 
 class Level:
@@ -13,17 +15,17 @@ class Level:
         # 1 = solid ground, 0 = empty
         # A simple level layout
         self.map_data = [
-            "0000000000000000000000000",
-            "0000000000000000000000000",
-            "0000000000000000000000000",
-            "0000000000000000000000000",
-            "0000000000000000000000000",
-            "0000000000000000000000000",
-            "0000000000111111000000000",
-            "0000000000000000000000000",
-            "0000011100000000001111000",
-            "0000000000000000000000000",
-            "0111000000011000000000000",
+            "1000000000000000000000001",
+            "1000000000000000000000001",
+            "1000000000000000000000001",
+            "1000000000000000000000001",
+            "1000000000000000000000001",
+            "1000000000000000000000001",
+            "1000000000111111000000001",
+            "1000000000000000000000001",
+            "1000011100000000001111001",
+            "1000000000000000000000001",
+            "1111000000011000000000001",
             "1111111111111111111111111",
             "1111111111111111111111111",
             "1111111111111111111111111",
@@ -45,19 +47,23 @@ class Level:
                     })
                     
     def render(self, renderer: Renderer) -> None:
-        # For new_tle.png, we just use a small portion of it (e.g. top-left tile at 0,0)
+        # Compute UV rect for the solid tile defined in settings.py
         uv_w = TILE_FRAME_WIDTH / TILE_TEX_WIDTH
         uv_h = TILE_FRAME_HEIGHT / TILE_TEX_HEIGHT
-        
-        uv_x = 0.0
-        uv_y = 0.0
-        
-        for y, row in enumerate(self.map_data):
-            for x, cell in enumerate(row):
-                if cell == '1':
+        uv_x = SOLID_TILE_COL * uv_w
+        uv_y = SOLID_TILE_ROW * uv_h
+
+        for row_idx, row in enumerate(self.map_data):
+            for col_idx, cell in enumerate(row):
+                if cell == "1":
                     renderer.draw_sprite(
-                        "tile", 
-                        x * TILE_SIZE, y * TILE_SIZE, 
-                        TILE_SIZE, TILE_SIZE,
-                        uv_x, uv_y, uv_w, uv_h
+                        "tile",
+                        col_idx * TILE_SIZE,
+                        row_idx * TILE_SIZE,
+                        TILE_SIZE,
+                        TILE_SIZE,
+                        uv_x,
+                        uv_y,
+                        uv_w,
+                        uv_h,
                     )
