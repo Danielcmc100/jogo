@@ -1,6 +1,6 @@
 import pygame
 from src.engine.renderer import Renderer
-from src.engine.physics import Rect, check_collision
+from src.engine.physics import Rect, Collider, check_collision
 from src.game.settings import (
     PLAYER_FRAME_WIDTH,
     PLAYER_FRAME_HEIGHT,
@@ -42,7 +42,7 @@ class Player:
         offset_y = PLAYER_FRAME_HEIGHT - self.h  # Align to bottom
         return {"x": self.x + offset_x, "y": self.y + offset_y, "w": self.w, "h": self.h}
 
-    def update(self, dt: float, tiles: list[Rect], keys: pygame.key.ScancodeWrapper) -> None:
+    def update(self, dt: float, tiles: list[Collider], keys: pygame.key.ScancodeWrapper) -> None:
         # --- Input ---
         self.vx = 0.0
         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
@@ -63,6 +63,9 @@ class Player:
         self.x += self.vx * dt
         player_rect = self.get_rect()
         for tile in tiles:
+            # Plataformas one-way não bloqueiam lateralmente
+            if tile.get("one_way", False):
+                continue
             if check_collision(player_rect, tile):
                 if self.vx > 0:
                     self.x = tile["x"] - self.w - (PLAYER_FRAME_WIDTH - self.w) / 2
@@ -76,6 +79,13 @@ class Player:
         self.is_grounded = False
         player_rect = self.get_rect()
         for tile in tiles:
+            if tile.get("one_way", False):
+                # One-way: só colide descendo E se o player vinha de cima
+                if self.vy <= 0:
+                    continue
+                # O pé do player deve ter estado acima do topo do tile antes do passo
+                if (player_rect["y"] + player_rect["h"] - self.vy * dt) > tile["y"]:
+                    continue
             if check_collision(player_rect, tile):
                 if self.vy > 0:
                     self.y = tile["y"] - PLAYER_FRAME_HEIGHT

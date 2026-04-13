@@ -27,13 +27,13 @@ def main():
         window.renderer.load_texture(f"ui_hp_{i}", f"sprites/UI/ui_hp_{i}.png")
 
     # Game objects
-    player = Player(100, 100)
+    player = Player(100, 464)  # row 14 * 32 = 448 → 32px acima do chão
     level = Level()
     background = Background()
-    # Duas cobras com patrulhas distintas no mapa
+    # Cobras posicionadas no chão (row 15, y = 480)
     snakes: list[Snake] = [
-        Snake(x=320, y=288, patrol_left=288, patrol_right=448),
-        Snake(x=544, y=256, patrol_left=480, patrol_right=640),
+        Snake(x=320, y=480, patrol_left=288, patrol_right=480),
+        Snake(x=800, y=480, patrol_left=704, patrol_right=960),
     ]
     health_bar = HealthBar(10, 10, scale=2.0)  # Top-left with some scale
 
@@ -67,6 +67,11 @@ def main():
         # We want the player roughly in the center
         target_cam_x = player.x - LOGICAL_WIDTH / 2.0 + player.w / 2.0
         target_cam_y = player.y - LOGICAL_HEIGHT / 2.0 + player.h / 2.0
+
+        max_cam_x = level.width_px - LOGICAL_WIDTH
+        max_cam_y = level.height_px - LOGICAL_HEIGHT
+        target_cam_x = max(0.0, min(target_cam_x, max_cam_x))
+        target_cam_y = max(0.0, min(target_cam_y, max_cam_y))
 
         # Smooth camera lerp
         window.renderer.camera_x += (
