@@ -62,8 +62,8 @@ SNAKE_TEX_HEIGHT: float = 48.0
 
 # chave -> (linha_na_sheet, num_frames, fps_da_animacao)
 SNAKE_ANIMATIONS: dict[str, tuple[int, int, float]] = {
-    "walk": (0, 3, 8.0),  # linha 0, 3 frames, 8 fps
-    "attack": (1, 2, 6.0),  # linha 1, 2 frames, 6 fps
+    "walk": (1, 3, 8.0),  # linha 0, 3 frames, 8 fps
+    "attack": (0, 2, 6.0),  # linha 1, 2 frames, 6 fps
 }
 
 # Comportamento da cobra
