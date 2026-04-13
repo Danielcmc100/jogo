@@ -4,23 +4,23 @@ from .renderer import Renderer
 from .shader import Shader
 
 class Window:
-    def __init__(self, title: str, width: int, height: int):
+    def __init__(self, title: str, window_w: int, window_h: int, logical_w: int, logical_h: int):
         pygame.init()
-        pygame.display.set_mode((width, height), pygame.DOUBLEBUF | pygame.OPENGL)
+        pygame.display.set_mode((window_w, window_h), pygame.DOUBLEBUF | pygame.OPENGL)
         pygame.display.set_caption(title)
         
-        gl.glViewport(0, 0, width, height)
+        gl.glViewport(0, 0, window_w, window_h)
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
         
-        self.width = width
-        self.height = height
+        self.width = window_w
+        self.height = window_h
         self.clock = pygame.time.Clock()
         self.running = True
         self.dt = 0.0
         
         self.shader = Shader()
-        self.renderer = Renderer(self.shader, width, height)
+        self.renderer = Renderer(self.shader, logical_w, logical_h)
         
     def clear(self) -> None:
         gl.glClearColor(0.1, 0.1, 0.1, 1.0)

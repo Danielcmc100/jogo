@@ -1,12 +1,12 @@
 import pygame
 from src.engine.window import Window
-from src.game.settings import SCREEN_WIDTH, SCREEN_HEIGHT
+from src.game.settings import SCREEN_WIDTH, SCREEN_HEIGHT, LOGICAL_WIDTH, LOGICAL_HEIGHT
 from src.game.player import Player
 from src.game.level import Level
 from src.game.background import Background
 
 def main():
-    window = Window("2D Platformer", SCREEN_WIDTH, SCREEN_HEIGHT)
+    window = Window("2D Platformer", SCREEN_WIDTH, SCREEN_HEIGHT, LOGICAL_WIDTH, LOGICAL_HEIGHT)
     
     # Load textures
     window.renderer.load_texture("player", "sprites/Character/char_panda.png")
@@ -30,8 +30,8 @@ def main():
         
         # Camera Follow Player
         # We want the player roughly in the center
-        target_cam_x = player.x - SCREEN_WIDTH / 2.0 + player.w / 2.0
-        target_cam_y = player.y - SCREEN_HEIGHT / 2.0 + player.h / 2.0
+        target_cam_x = player.x - LOGICAL_WIDTH / 2.0 + player.w / 2.0
+        target_cam_y = player.y - LOGICAL_HEIGHT / 2.0 + player.h / 2.0
         
         # Smooth camera lerp
         window.renderer.camera_x += (target_cam_x - window.renderer.camera_x) * 5.0 * window.dt

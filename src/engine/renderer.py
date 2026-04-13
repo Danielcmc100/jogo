@@ -97,7 +97,7 @@ class Renderer:
             1.0, 0.0, 0.0, 0.0,
             0.0, 1.0, 0.0, 0.0,
             0.0, 0.0, 1.0, 0.0,
-            -self.camera_x, -self.camera_y, 0.0, 1.0
+            -round(self.camera_x), -round(self.camera_y), 0.0, 1.0
         ]
 
     def draw_sprite(self, texture_name: str, x: float, y: float, w: float, h: float, 
@@ -107,7 +107,7 @@ class Renderer:
         
         projection = self._get_ortho(0.0, self.screen_width, self.screen_height, 0.0)
         view = self._get_view_matrix()
-        model = self._get_model_matrix(x, y, w, h)
+        model = self._get_model_matrix(round(x), round(y), round(w), round(h))
         
         self.shader.set_mat4("projection", (ctypes.c_float * 16)(*projection))
         self.shader.set_mat4("view", (ctypes.c_float * 16)(*view))

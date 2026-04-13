@@ -1,5 +1,5 @@
 from src.engine.renderer import Renderer
-from src.game.settings import SCREEN_WIDTH, SCREEN_HEIGHT
+from src.game.settings import LOGICAL_WIDTH, LOGICAL_HEIGHT
 
 class Background:
     def __init__(self):
@@ -19,7 +19,7 @@ class Background:
             # drawing two quads side by side will simulate scrolling easily.
             
             # Simple offset calculation based on camera
-            offset_x = (cam_x * scroll_factor) % SCREEN_WIDTH
+            offset_x = (cam_x * scroll_factor) % LOGICAL_WIDTH
             
             # Keeping Y locked to screen for now or simple scroll
             
@@ -27,11 +27,11 @@ class Background:
             renderer.draw_sprite(
                 tex_name, 
                 cam_x - offset_x, cam_y, 
-                SCREEN_WIDTH, SCREEN_HEIGHT
+                LOGICAL_WIDTH, LOGICAL_HEIGHT
             )
             # Draw second quad for wrap around
             renderer.draw_sprite(
                 tex_name, 
-                cam_x - offset_x + SCREEN_WIDTH, cam_y, 
-                SCREEN_WIDTH, SCREEN_HEIGHT
+                cam_x - offset_x + LOGICAL_WIDTH, cam_y, 
+                LOGICAL_WIDTH, LOGICAL_HEIGHT
             )
