@@ -1,72 +1,53 @@
 import pygame
-from pygame.locals import *
-from OpenGL.GL import *
-from OpenGL.GLU import *
-from bullet import draw_bullet
+from src.engine.window import Window
+from src.game.settings import SCREEN_WIDTH, SCREEN_HEIGHT
+from src.game.player import Player
+from src.game.level import Level
+from src.game.background import Background
 
-# =====================
-# INIT
-# =====================
-pygame.init()
-display = (800, 600)
-pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
+def main():
+    window = Window("2D Platformer", SCREEN_WIDTH, SCREEN_HEIGHT)
+    
+    # Load textures
+    window.renderer.load_texture("player", "sprites/Character/char_panda.png")
+    window.renderer.load_texture("tile", "sprites/Tiles/new_tle.png")
+    window.renderer.load_texture("bg_2", "sprites/Background/bg_2.png")
+    window.renderer.load_texture("bg_3", "sprites/Background/bg_3.png")
+    window.renderer.load_texture("bg_4", "sprites/Background/bg_4.png")
+    
+    # Game objects
+    player = Player(100, 100)
+    level = Level()
+    background = Background()
+    
+    while window.running:
+        # Input & Events
+        window.poll_events()
+        keys = pygame.key.get_pressed()
+        
+        # Update
+        player.update(window.dt, level.colliders, keys)
+        
+        # Camera Follow Player
+        # We want the player roughly in the center
+        target_cam_x = player.x - SCREEN_WIDTH / 2.0 + player.w / 2.0
+        target_cam_y = player.y - SCREEN_HEIGHT / 2.0 + player.h / 2.0
+        
+        # Smooth camera lerp
+        window.renderer.camera_x += (target_cam_x - window.renderer.camera_x) * 5.0 * window.dt
+        window.renderer.camera_y += (target_cam_y - window.renderer.camera_y) * 5.0 * window.dt
+        
+        # Render
+        window.clear()
+        
+        background.render(window.renderer, window.renderer.camera_x, window.renderer.camera_y)
+        level.render(window.renderer)
+        player.render(window.renderer)
+        
+        window.swap_buffers()
+        window.tick(60)
+        
+    pygame.quit()
 
-glOrtho(0, 800, 0, 600, -1, 1)
-glClearColor(0, 0, 0, 1)
-
-clock = pygame.time.Clock()
-
-
-player_x = 400
-player_y = 50
-
-bullets = []
-
-
-# =====================
-# DRAW FUNCTIONS
-# =====================
-def draw_player(x, y):
-    glColor3f(1, 1, 1)
-    glBegin(GL_QUADS)
-    glVertex2f(x - 20, y)
-    glVertex2f(x + 20, y)
-    glVertex2f(x + 20, y + 20)
-    glVertex2f(x - 20, y + 20)
-    glEnd()
-
-
-# =====================
-# GAME LOOP
-# =====================
-while True:
-    # -------- INPUT --------
-    for event in pygame.event.get():
-        if event.type == QUIT:
-            pygame.quit()
-            quit()
-
-        if event.type == KEYDOWN:
-            if event.key == K_SPACE:
-                bullets.append([player_x, player_y])
-
-    keys = pygame.key.get_pressed()
-    if keys[K_a]:
-        player_x -= 5
-    if keys[K_d]:
-        player_x += 5
-
-    # -------- UPDATE --------
-    for bullet in bullets:
-        bullet[1] += 10  # sobe
-
-    # -------- RENDER --------
-    glClear(GL_COLOR_BUFFER_BIT)
-
-    draw_player(player_x, player_y)
-
-    for bullet in bullets:
-        draw_bullet(bullet[0], bullet[1])
-
-    pygame.display.flip()
-    clock.tick(60)
+if __name__ == "__main__":
+    main()
