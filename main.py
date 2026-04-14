@@ -102,7 +102,7 @@ def main() -> None:
                 window.renderer.camera_x = 0.0
                 window.renderer.camera_y = 0.0
 
-        elif not game_over:
+        elif not game_over and not game_won:
             player.update(window.dt, level.colliders, keys)
             player_rect = player.get_rect()
             attack_rect = player.get_attack_rect()
@@ -145,18 +145,13 @@ def main() -> None:
             if player.is_dead:
                 game_over = True
 
-            # Condição de passar de fase: ultrapassar a borda direita
-            # ou tocar o fim da tela lógica da ponta da fase
-            if player.x > level.width_px - 32:
-                current_level_idx += 1
-                if current_level_idx >= len(LEVELS):
+            # Condição de passar de fase: eliminar todos os inimigos
+            if len(snakes) == 0 and not is_transitioning:
+                if current_level_idx >= len(LEVELS) - 1:
                     game_won = True
-                    current_level_idx = len(LEVELS) - 1  # Trava no último
                 else:
-                    level, snakes, new_player = load_stage(current_level_idx)
-                    # Mantém o hp da fase anterior, mas cura 100% como bônus e recompensa
-                    new_player.hp = new_player.max_hp
-                    player = new_player
+                    is_transitioning = True
+                    transition_timer = 2.0
 
             # ── Câmera — clamped nos limites do mapa ───────────────────
             target_cam_x = player.x - LOGICAL_WIDTH / 2.0 + player.w / 2.0
