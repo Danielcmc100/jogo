@@ -12,6 +12,9 @@ from src.game.settings import (
     PLAYER_ANIMATIONS,
     PLAYER_MAX_HP,
     PLAYER_INVINCIBILITY_TIME,
+    PLAYER_ATTACK_W,
+    PLAYER_ATTACK_H,
+    PLAYER_ATTACK_ACTIVE_FRAMES,
 )
 
 
@@ -39,6 +42,10 @@ class Player:
         # Tempo de invencibilidade restante após tomar dano
         self._invincibility_timer: float = 0.0
 
+        # Estado de ataque
+        self._attacking: bool = False       # True enquanto a animação de ataque corre
+        self._attack_pressed: bool = False  # edge-trigger: evita auto-repetição
+
     @property
     def is_dead(self) -> bool:
         return self.hp <= 0
@@ -48,20 +55,46 @@ class Player:
         return self._invincibility_timer > 0.0
 
     def get_rect(self) -> Rect:
-        # Give a little offset to center the hitbox horizontally
         offset_x = (PLAYER_FRAME_WIDTH - self.w) / 2
         offset_y = PLAYER_FRAME_HEIGHT - self.h  # Align to bottom
         return {"x": self.x + offset_x, "y": self.y + offset_y, "w": self.w, "h": self.h}
 
+    def get_attack_rect(self) -> Rect | None:
+        """Retorna a hitbox da espada se o frame atual for ativo, ou None."""
+        if not self._attacking:
+            return None
+        if self.current_frame not in PLAYER_ATTACK_ACTIVE_FRAMES:
+            return None
+        # Hitbox à frente do player, na altura do tronco
+        rect_y = self.y + (PLAYER_FRAME_HEIGHT - PLAYER_ATTACK_H) / 2
+        if self.facing_right:
+            rect_x = self.x + PLAYER_FRAME_WIDTH
+        else:
+            rect_x = self.x - PLAYER_ATTACK_W
+        return {"x": rect_x, "y": rect_y, "w": float(PLAYER_ATTACK_W), "h": float(PLAYER_ATTACK_H)}
+
     def update(self, dt: float, tiles: list[Collider], keys: pygame.key.ScancodeWrapper) -> None:
         # --- Input ---
-        self.vx = 0.0
-        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-            self.vx = -PLAYER_SPEED
-            self.facing_right = False
-        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-            self.vx = PLAYER_SPEED
-            self.facing_right = True
+        # Edge-trigger para o ataque: só inicia no frame que Z é pressionado
+        z_held = keys[pygame.K_z]
+        if z_held and not self._attack_pressed and not self._attacking:
+            self._attacking = True
+            self.state = "attack"
+            self.current_frame = 0
+            self.anim_timer = 0.0
+        self._attack_pressed = z_held
+
+        # Movimento horizontal — bloqueado durante o ataque
+        if not self._attacking:
+            self.vx = 0.0
+            if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+                self.vx = -PLAYER_SPEED
+                self.facing_right = False
+            if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+                self.vx = PLAYER_SPEED
+                self.facing_right = True
+        else:
+            self.vx = 0.0  # congela X durante o ataque
 
         if (keys[pygame.K_SPACE] or keys[pygame.K_w] or keys[pygame.K_UP]) and self.is_grounded:
             self.vy = JUMP_FORCE
@@ -111,30 +144,39 @@ class Player:
                 player_rect = self.get_rect()
 
         # --- Animation State ---
-        new_state: str
-        if not self.is_grounded:
-            new_state = "jump"
-        elif abs(self.vx) > 0.01:
-            new_state = "walk"
-        else:
-            new_state = "idle"
+        if not self._attacking:
+            # Estado normal: jump > walk > idle
+            new_state: str
+            if not self.is_grounded:
+                new_state = "jump"
+            elif abs(self.vx) > 0.01:
+                new_state = "walk"
+            else:
+                new_state = "idle"
 
-        # Reset frame counter when the animation state changes
-        if new_state != self.state:
-            self.state = new_state
-            self.current_frame = 0
-            self.anim_timer = 0.0
+            if new_state != self.state:
+                self.state = new_state
+                self.current_frame = 0
+                self.anim_timer = 0.0
 
-        # Advance frame based on the FPS defined in PLAYER_ANIMATIONS
+        # Avança animação
         _row, num_frames, fps = PLAYER_ANIMATIONS[self.state]
         frame_duration = 1.0 / fps
-
         self.anim_timer += dt
         if self.anim_timer >= frame_duration:
             self.anim_timer -= frame_duration
-            self.current_frame = (self.current_frame + 1) % num_frames
+            next_frame = self.current_frame + 1
+            if self._attacking and next_frame >= num_frames:
+                # Animação de ataque terminou
+                self._attacking = False
+                self.state = "idle"
+                self.current_frame = 0
+                self.anim_timer = 0.0
+            else:
+                self.current_frame = next_frame % num_frames
 
     def render(self, renderer: Renderer) -> None:
+        import math
         # Look up the row and total frame count from the animation definition
         row, _num_frames, _fps = PLAYER_ANIMATIONS[self.state]
         col = self.current_frame
@@ -146,9 +188,16 @@ class Player:
         uv_y = row * uv_h
 
         if not self.facing_right:
-            # Flip horizontally by shifting uv_x to the right edge and negating width
             uv_x += uv_w
             uv_w = -uv_w
+
+        # Flash vermelho durante invencibilidade — pisca a 10 Hz
+        tint: tuple[float, float, float, float] | None = None
+        if self.is_invincible:
+            # alterna entre flash e normal a cada 0.05s
+            phase = math.fmod(self._invincibility_timer, 0.1)
+            if phase < 0.05:
+                tint = (1.0, 0.0, 0.0, 0.72)  # vermelho intenso
 
         renderer.draw_sprite(
             "player",
@@ -160,6 +209,7 @@ class Player:
             uv_y,
             uv_w,
             uv_h,
+            tint=tint,
         )
 
     def take_damage(self, amount: int, knockback_vx: float = 0.0) -> bool:
@@ -184,6 +234,8 @@ class Player:
         self.vy = 0.0
         self.hp = self.max_hp
         self._invincibility_timer = 0.0
+        self._attacking = False
+        self._attack_pressed = False
         self.state = "idle"
         self.current_frame = 0
         self.anim_timer = 0.0

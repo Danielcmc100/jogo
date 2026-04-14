@@ -27,13 +27,17 @@ out vec4 FragColor;
 in vec2 TexCoord;
 
 uniform sampler2D ourTexture;
+uniform vec3      u_tint_color;    // cor do tint (RGB)
+uniform float     u_tint_strength; // 0.0 = sem efeito, 1.0 = cor pura
 
 void main()
 {
     vec4 texColor = texture(ourTexture, TexCoord);
     if(texColor.a < 0.1)
         discard;
-    FragColor = texColor;
+    // Mistura a cor original com o tint preservando o alpha original
+    vec3 tinted = mix(texColor.rgb, u_tint_color, u_tint_strength);
+    FragColor = vec4(tinted, texColor.a);
 }
 """
 
@@ -54,3 +58,11 @@ class Shader:
     def set_mat4(self, name: str, value: Any) -> None:
         location = gl.glGetUniformLocation(self.program, name)
         gl.glUniformMatrix4fv(location, 1, gl.GL_FALSE, value)
+
+    def set_vec3(self, name: str, r: float, g: float, b: float) -> None:
+        location = gl.glGetUniformLocation(self.program, name)
+        gl.glUniform3f(location, r, g, b)
+
+    def set_float(self, name: str, value: float) -> None:
+        location = gl.glGetUniformLocation(self.program, name)
+        gl.glUniform1f(location, value)

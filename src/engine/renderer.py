@@ -100,43 +100,57 @@ class Renderer:
             -round(self.camera_x), -round(self.camera_y), 0.0, 1.0
         ]
 
-    def draw_sprite(self, texture_name: str, x: float, y: float, w: float, h: float, 
-                    uv_x: float = 0.0, uv_y: float = 0.0, uv_w: float = 1.0, uv_h: float = 1.0) -> None:
-        
+    def draw_sprite(self, texture_name: str, x: float, y: float, w: float, h: float,
+                    uv_x: float = 0.0, uv_y: float = 0.0, uv_w: float = 1.0, uv_h: float = 1.0,
+                    tint: tuple[float, float, float, float] | None = None) -> None:
+        """Renderiza um sprite.
+
+        Parâmetro ``tint``
+        ------------------
+        Tupla ``(r, g, b, strength)`` onde:
+          - r, g, b ∈ [0.0, 1.0]  — cor do flash
+          - strength ∈ [0.0, 1.0] — 0 = sem efeito, 1 = cor pura
+        ``None`` → sem flash (comportamento padrão).
+        """
         self.shader.use()
-        
+
         projection = self._get_ortho(0.0, self.screen_width, self.screen_height, 0.0)
         view = self._get_view_matrix()
         model = self._get_model_matrix(round(x), round(y), round(w), round(h))
-        
+
         self.shader.set_mat4("projection", (ctypes.c_float * 16)(*projection))
         self.shader.set_mat4("view", (ctypes.c_float * 16)(*view))
         self.shader.set_mat4("model", (ctypes.c_float * 16)(*model))
-        
-        # Modify VBO to handle dynamic UV coordinates
-        # Since I'm using a simple quad and changing UVs on the fly, 
-        # I'll update the VBO with the new UVs.
-        
+
+        # ── Tint (flash) ──────────────────────────────────────────────
+        if tint is not None:
+            r, g, b, strength = tint
+            self.shader.set_vec3("u_tint_color", r, g, b)
+            self.shader.set_float("u_tint_strength", strength)
+        else:
+            self.shader.set_vec3("u_tint_color", 0.0, 0.0, 0.0)
+            self.shader.set_float("u_tint_strength", 0.0)
+
         vertices = [
-             0.0,  1.0,   uv_x, uv_y,                 # bottom-left (Y flipped for rendering vs image if needed, but Pygame tostring(flip=True) handles it)
-             1.0,  0.0,   uv_x + uv_w, uv_y + uv_h,   # top-right
-             0.0,  0.0,   uv_x, uv_y + uv_h,          # top-left
-             
-             0.0,  1.0,   uv_x, uv_y,                 # bottom-left
-             1.0,  1.0,   uv_x + uv_w, uv_y,          # bottom-right
-             1.0,  0.0,   uv_x + uv_w, uv_y + uv_h    # top-right
+             0.0,  1.0,   uv_x, uv_y,
+             1.0,  0.0,   uv_x + uv_w, uv_y + uv_h,
+             0.0,  0.0,   uv_x, uv_y + uv_h,
+
+             0.0,  1.0,   uv_x, uv_y,
+             1.0,  1.0,   uv_x + uv_w, uv_y,
+             1.0,  0.0,   uv_x + uv_w, uv_y + uv_h
         ]
-        
+
         vertex_data = (ctypes.c_float * len(vertices))(*vertices)
-        
+
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.vbo)
         gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, len(vertices) * 4, vertex_data)
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
-        
+
         gl.glActiveTexture(gl.GL_TEXTURE0)
         if texture_name in self.textures:
             gl.glBindTexture(gl.GL_TEXTURE_2D, self.textures[texture_name]["id"])
-        
+
         gl.glBindVertexArray(self.vao)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, 6)
         gl.glBindVertexArray(0)

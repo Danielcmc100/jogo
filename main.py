@@ -75,6 +75,7 @@ def main() -> None:
         if not game_over:
             player.update(window.dt, level.colliders, keys)
             player_rect = player.get_rect()
+            attack_rect = player.get_attack_rect()  # None se não está atacando
 
             for snake in snakes:
                 hit = snake.update(
@@ -88,13 +89,22 @@ def main() -> None:
 
                 # Colisão do player com fireballs da cobra
                 for fb in snake.fireballs:
-                    if fb.alive and fb.get_rect() is not None:
+                    if fb.alive:
                         from src.engine.physics import check_collision
 
                         if check_collision(player_rect, fb.get_rect()):
-                            fb.alive = False  # consome o projétil
+                            fb.alive = False
                             kb = 120.0 if fb.vx > 0 else -120.0
                             player.take_damage(1, knockback_vx=kb)
+
+                # Espada do player acertou a cobra?
+                if attack_rect is not None:
+                    from src.engine.physics import check_collision
+                    if check_collision(attack_rect, snake.get_rect()):
+                        snake.take_hit(1)
+
+            # Remove cobras mortas
+            snakes = [s for s in snakes if s.alive]
 
             # Game over?
             if player.is_dead:

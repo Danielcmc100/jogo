@@ -31,10 +31,17 @@ PLAYER_TEX_HEIGHT: float = 256.0
 # Definição de animações do player:
 # chave -> (linha_na_sheet, num_frames, fps_da_animacao)
 PLAYER_ANIMATIONS: dict[str, tuple[int, int, float]] = {
-    "idle": (7, 4, 8.0),  # linha 0, 4 frames, 8 fps
-    "walk": (6, 5, 10.0),  # linha 1, 6 frames, 10 fpss
-    "jump": (3, 1, 6.0),  # linha 2, 2 frames, 6 fps
+    "idle":   (7, 4, 8.0),   # linha 7, 4 frames, 8 fps
+    "walk":   (6, 5, 10.0),  # linha 6, 5 frames, 10 fps
+    "jump":   (3, 1, 6.0),   # linha 3, 1 frame,  6 fps
+    "attack": (5, 3, 12.0),  # linha 5, cols 0-2, 3 frames, 12 fps  ← ESPADA
 }
+
+# Hitbox da espada (extende à frente do player)
+PLAYER_ATTACK_W: int = 22   # largura do alcance da espada (px)
+PLAYER_ATTACK_H: int = 18   # altura da hitbox (px)
+# A hitbox fica ativa apenas nos frames 1 e 2 do ataque
+PLAYER_ATTACK_ACTIVE_FRAMES: tuple[int, ...] = (1, 2)
 
 # ---------------------------------------------------------------------------
 # new_tle.png — 128x128, frames de 32x32 (4 colunas × 4 linhas)
@@ -68,10 +75,12 @@ SNAKE_ANIMATIONS: dict[str, tuple[int, int, float]] = {
 }
 
 # Comportamento da cobra
-SNAKE_SPEED: float = 60.0  # px/s de movimento horizontal
-SNAKE_DETECTION_RANGE: float = 120.0  # distância pra detectar o player
-SNAKE_ATTACK_RANGE: float = 80.0  # distância pra disparar a bola de fogo
-SNAKE_ATTACK_COOLDOWN: float = 2.5  # segundos entre ataques
+SNAKE_SPEED: float = 60.0            # px/s de movimento horizontal
+SNAKE_DETECTION_RANGE: float = 120.0 # distância pra detectar o player
+SNAKE_ATTACK_RANGE: float = 80.0     # distância pra disparar a bola de fogo
+SNAKE_ATTACK_COOLDOWN: float = 2.5   # segundos entre ataques
+SNAKE_MAX_HP: int = 2                # hits para matar a cobra
+SNAKE_HIT_INVINCIBILITY: float = 0.4 # segundos de invencibilidade pós-hit
 
 # ---------------------------------------------------------------------------
 # npc_fire1.png — 32x16, frames de 8x16 (4 colunas × 1 linha)

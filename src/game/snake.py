@@ -14,6 +14,8 @@ from src.game.settings import (
     SNAKE_ATTACK_RANGE,
     SNAKE_ATTACK_COOLDOWN,
     FIRE_FRAME_WIDTH,
+    SNAKE_MAX_HP,
+    SNAKE_HIT_INVINCIBILITY,
 )
 
 
@@ -66,6 +68,11 @@ class Snake:
         # Projéteis vivos
         self.fireballs: list[Fireball] = []
 
+        # Vida e estado de combate
+        self.hp: int = SNAKE_MAX_HP
+        self.alive: bool = True
+        self._hit_timer: float = 0.0   # invencibilidade pós-hit
+
     # ------------------------------------------------------------------
     # Hitbox
     # ------------------------------------------------------------------
@@ -102,6 +109,16 @@ class Snake:
         if self.anim_timer >= frame_duration:
             self.anim_timer -= frame_duration
             self.current_frame = (self.current_frame + 1) % num_frames
+
+    def take_hit(self, damage: int = 1) -> bool:
+        """Aplica dano à cobra. Retorna True se o hit foi efetivo."""
+        if not self.alive or self._hit_timer > 0.0:
+            return False
+        self.hp -= damage
+        self._hit_timer = SNAKE_HIT_INVINCIBILITY
+        if self.hp <= 0:
+            self.alive = False
+        return True
 
     # ------------------------------------------------------------------
     # Física — colisão contra tiles no eixo X e Y separadamente,
@@ -191,6 +208,12 @@ class Snake:
         player_rect: Rect,
     ) -> bool:
         """Atualiza a cobra e retorna True se colidiu com o player."""
+        if not self.alive:
+            return False
+
+        # Decrementa invencibilidade pós-hit
+        if self._hit_timer > 0.0:
+            self._hit_timer = max(0.0, self._hit_timer - dt)
 
         # ── Cooldown de ataque ─────────────────────────────────────────
         if self.attack_cooldown > 0.0:
@@ -279,6 +302,9 @@ class Snake:
     # ------------------------------------------------------------------
 
     def render(self, renderer: Renderer) -> None:
+        if not self.alive:
+            return  # cobra morta não renderiza
+
         row, _num_frames, _fps = SNAKE_ANIMATIONS[self.state]
         col = self.current_frame
 
@@ -291,6 +317,15 @@ class Snake:
             uv_x += uv_w
             uv_w = -uv_w
 
+        # Flash vermelho quando acabou de levar um hit
+        # Pisca rápido (6 Hz) para dar feedback visual claro
+        import math
+        tint: tuple[float, float, float, float] | None = None
+        if self._hit_timer > 0.0:
+            phase = math.fmod(self._hit_timer, 0.18)
+            if phase < 0.09:
+                tint = (1.0, 0.0, 0.0, 0.85)  # vermelho intenso
+
         renderer.draw_sprite(
             "snake",
             self.x,
@@ -301,6 +336,7 @@ class Snake:
             uv_y,
             uv_w,
             uv_h,
+            tint=tint,
         )
 
         for fb in self.fireballs:
