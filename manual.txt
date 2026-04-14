@@ -2,9 +2,7 @@
            DADOS DO GRUPO (PREENCHER PARA ENTREGA)
 ============================================================
 Nome 1: Kleber Daniel Mattos Viana Matrícula: 06007199
-Nome 2: __________________________ Matrícula: __________
-Nome 3: __________________________ Matrícula: __________
-Nome 4: __________________________ Matrícula: __________
+Nome 2: Gabriel Maciel de Aguiar Silva Matrícula: 06006665
 
 ============================================================
            MANUAL DO JOGO: PANDA ADVENTURE 2D
