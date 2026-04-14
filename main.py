@@ -5,7 +5,14 @@ from src.game.player import Player
 from src.game.level import Level, LEVELS
 from src.game.background import Background
 from src.game.snake import Snake
-from src.game.ui import HealthBar, GameOverScreen, HudInfo, LevelTransitionScreen
+from src.game.ui import (
+    HealthBar,
+    GameOverScreen,
+    HudInfo,
+    LevelTransitionScreen,
+    VictoryScreen,
+)
+
 
 def load_stage(level_idx: int) -> tuple[Level, list[Snake], Player]:
     level = Level(level_idx)
@@ -13,6 +20,7 @@ def load_stage(level_idx: int) -> tuple[Level, list[Snake], Player]:
     # Certifique-se de não referenciar os mesmos objetos antigos
     player = Player(level.spawn_x, level.spawn_y)
     return level, snakes, player
+
 
 def main() -> None:
     window = Window(
@@ -36,6 +44,7 @@ def main() -> None:
     score = 0
     current_level_idx = 0
     game_over = False
+    game_won = False
 
     level, snakes, player = load_stage(current_level_idx)
     background = Background()
@@ -43,6 +52,7 @@ def main() -> None:
     # ── UI ──────────────────────────────────────────────────────────────
     health_bar = HealthBar(screen_x=8, screen_y=8, scale=2.0)
     game_over_scr = GameOverScreen()
+    victory_scr = VictoryScreen()
     hud_info = HudInfo()
     transition_scr = LevelTransitionScreen()
 
@@ -58,13 +68,14 @@ def main() -> None:
         for event in window.events:
             if event.type == pygame.KEYDOWN:
                 # Reiniciar (R) — funciona só em game over
-                if event.key == pygame.K_r and game_over:
+                if event.key == pygame.K_r and (game_over or game_won):
                     score = 0
                     current_level_idx = 0
                     level, snakes, player = load_stage(current_level_idx)
                     window.renderer.camera_x = 0.0
                     window.renderer.camera_y = 0.0
                     game_over = False
+                    game_won = False
 
                 # Teclas de debug
                 if event.key == pygame.K_k:
@@ -82,12 +93,12 @@ def main() -> None:
                 current_level_idx += 1
                 if current_level_idx >= len(LEVELS):
                     current_level_idx = 0
-                
+
                 level, snakes, new_player = load_stage(current_level_idx)
-                new_player.hp = player.hp # mantém hp do player
+                new_player.hp = player.hp  # mantém hp do player
                 player = new_player
                 is_transitioning = False
-                
+
                 window.renderer.camera_x = 0.0
                 window.renderer.camera_y = 0.0
 
@@ -100,7 +111,7 @@ def main() -> None:
                 hit = snake.update(
                     window.dt, level.colliders, player.x, player.y, player_rect
                 )
-                
+
                 # Toque direto com a cobra
                 if hit:
                     snake_cx = snake.x + snake.get_rect()["w"] / 2
@@ -111,6 +122,7 @@ def main() -> None:
                 for fb in snake.fireballs:
                     if fb.alive:
                         from src.engine.physics import check_collision
+
                         if check_collision(player_rect, fb.get_rect()):
                             fb.alive = False
                             kb = 120.0 if fb.vx > 0 else -120.0
@@ -119,6 +131,7 @@ def main() -> None:
                 # Espada do player acertou a cobra?
                 if attack_rect is not None:
                     from src.engine.physics import check_collision
+
                     if check_collision(attack_rect, snake.get_rect()):
                         if snake.take_hit(1):
                             # Se o hit matou a cobra (tava viva e agora hp <= 0)
@@ -132,20 +145,26 @@ def main() -> None:
             if player.is_dead:
                 game_over = True
 
-            # Condição de passar de fase: todos os inimigos da tela mortos
-            # Para evitar que fases sem cobra passem automaticamente e se limitem à ação do player,
-            # Se não quiser que fases sem cobra passem imediatamente, precisaria checar len(level.snakes) > 0 também.
-            if len(snakes) == 0 and not is_transitioning:
-                is_transitioning = True
-                transition_timer = 2.0  # Mensagem de 2 segundos
-                 
+            # Condição de passar de fase: ultrapassar a borda direita
+            # ou tocar o fim da tela lógica da ponta da fase
+            if player.x > level.width_px - 32:
+                current_level_idx += 1
+                if current_level_idx >= len(LEVELS):
+                    game_won = True
+                    current_level_idx = len(LEVELS) - 1  # Trava no último
+                else:
+                    level, snakes, new_player = load_stage(current_level_idx)
+                    # Mantém o hp da fase anterior, mas cura 100% como bônus e recompensa
+                    new_player.hp = new_player.max_hp
+                    player = new_player
+
             # ── Câmera — clamped nos limites do mapa ───────────────────
             target_cam_x = player.x - LOGICAL_WIDTH / 2.0 + player.w / 2.0
             target_cam_y = player.y - LOGICAL_HEIGHT / 2.0 + player.h / 2.0
 
             max_cam_x = max(0.0, float(level.width_px - LOGICAL_WIDTH))
             max_cam_y = max(0.0, float(level.height_px - LOGICAL_HEIGHT))
-            
+
             target_cam_x = max(0.0, min(target_cam_x, max_cam_x))
             target_cam_y = max(0.0, min(target_cam_y, max_cam_y))
 
@@ -174,15 +193,21 @@ def main() -> None:
         hud_info.render(window.renderer, score, current_level_idx)
 
         if is_transitioning:
-            transition_scr.render(window.renderer, current_level_idx + 1 if current_level_idx + 1 < len(LEVELS) else 0)
+            transition_scr.render(
+                window.renderer,
+                current_level_idx + 1 if current_level_idx + 1 < len(LEVELS) else 0,
+            )
 
         if game_over:
             game_over_scr.render(window.renderer)
+        elif game_won:
+            victory_scr.render(window.renderer)
 
         window.swap_buffers()
         window.tick(60)
 
     pygame.quit()
+
 
 if __name__ == "__main__":
     main()

@@ -35,6 +35,7 @@ class Fireball:
         self._frame_duration = 1.0 / fps
         self.anim_timer = 0.0
         self.current_frame = 0
+        self.angle = 0.0
 
     def get_rect(self) -> Rect:
         return {
@@ -73,6 +74,11 @@ class Fireball:
             self.anim_timer -= self._frame_duration
             self.current_frame = (self.current_frame + 1) % num_frames
 
+        # Rotaciona continuamente (ex: 360 graus por segundo)
+        self.angle += 360.0 * dt
+        if self.angle >= 360.0:
+            self.angle -= 360.0
+
     def render(self, renderer: Renderer) -> None:
         if not self.alive:
             return
@@ -100,4 +106,5 @@ class Fireball:
             uv_y,
             uv_w,
             uv_h,
+            angle=self.angle
         )

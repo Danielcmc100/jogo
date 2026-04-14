@@ -1,0 +1,60 @@
+============================================================
+           DADOS DO GRUPO (PREENCHER PARA ENTREGA)
+============================================================
+Nome 1: __________________________ Matrícula: __________
+Nome 2: __________________________ Matrícula: __________
+Nome 3: __________________________ Matrícula: __________
+Nome 4: __________________________ Matrícula: __________
+
+============================================================
+           MANUAL DO JOGO: PANDA ADVENTURE 2D
+============================================================
+
+1. COMO EXECUTAR O JOGO
+-----------------------
+Certifique-se de ter o Python 3.12+ e o gerenciador 'uv' instalado.
+No terminal, na raiz do projeto, execute:
+
+    uv run python main.py
+
+Requisitos de biblioteca (gerenciados automaticamente pelo uv):
+- pygame (Janelamento e Input)
+- PyOpenGL (Renderização via GPU)
+
+2. COMO JOGAR (COMANDOS)
+------------------------
+- Movimentação: Setas Esquerda/Direita ou A/D
+- Pulo: Seta Para Cima, W ou Barra de Espaço
+- Ataque: Tecla Z (Ataca com a espada)
+- Reiniciar: Tecla R (Apenas na tela de Game Over)
+
+- Debug (Opcional):
+    - Tecla K: Perder 1 HP
+    - Tecla L: Ganhar 1 HP
+
+3. EXPLICAÇÃO DOS REQUISITOS OBRIGATÓRIOS
+-----------------------------------------
+
+🔹 I. TRANSFORMAÇÕES GRÁFICAS (OpenGL)
+O jogo utiliza matrizes de transformação enviadas para os shaders GLSL.
+- TRANSLAÇÃO: Aplicada no movimento do player, câmeras e inimigos.
+- ESCALA: Aplicada na renderização da barra de vida (UI) e ajuste de resolução lógica.
+- ROTAÇÃO: Aplicada nos projéteis (Fireballs) disparados pela cobra, que giram durante o percurso.
+
+🔹 II. MECÂNICAS DE JOGO
+- INPUT: Entrada implementada via teclado (Pygame events).
+- PONTUAÇÃO (Score): O jogador ganha 100 pontos para cada Cobra derrotada com o ataque de espada.
+- VIDA/ESTADO: O panda possui 5 pontos de vida (visualizados na barra superior). Ao chegar a 0, a tela de Game Over é exibida.
+- NÍVEIS E DIFICULDADE: Ao chegar no final do mapa (lado direito), o jogador avança de nível. A dificuldade aumenta com o surgimento de mais inimigos e reposicionamento estratégico.
+- TELA FINAL: Implementada tela de "GAME OVER" com opção de reinício total do progresso.
+
+4. DETALHES TÉCNICOS
+--------------------
+- Renderização: Pixel Perfect com sub-pixel snapping.
+- Física: Colisões AABB com suporte a plataformas unidirecionais ("one-way").
+- Performance: Uso de Modern OpenGL (VAOs e Shaders) para delegação de carga à GPU.
+
+------------------------------------------------------------
+Desenvolvedor: Antigravity (IA) em conjunto com o aluno.
+Data: 14/04/2026
+------------------------------------------------------------

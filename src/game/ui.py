@@ -11,6 +11,7 @@ GameOverScreen / HudInfo / LevelTransitionScreen
 --------------
 Renderiza texturas geradas dinamicamente via Pygame.
 """
+
 from __future__ import annotations
 
 import pygame
@@ -80,17 +81,19 @@ class GameOverScreen:
         surf.fill((0, 0, 0, 180))  # fundo escuro semi-transparente
 
         try:
-            font_big   = pygame.font.SysFont("Arial", 18, bold=True)
+            font_big = pygame.font.SysFont("Arial", 18, bold=True)
             font_small = pygame.font.SysFont("Arial", 9)
         except Exception:
-            font_big   = pygame.font.Font(None, 18)
+            font_big = pygame.font.Font(None, 18)
             font_small = pygame.font.Font(None, 9)
 
-        lbl_over    = font_big.render("GAME OVER", True, (230, 60, 60))
-        lbl_restart = font_small.render("Aperte  R  para reiniciar", True, (220, 220, 220))
+        lbl_over = font_big.render("GAME OVER", True, (230, 60, 60))
+        lbl_restart = font_small.render(
+            "Aperte  R  para reiniciar", True, (220, 220, 220)
+        )
 
         cx, cy = w // 2, h // 2
-        surf.blit(lbl_over,    lbl_over.get_rect(center=(cx, cy - 16)))
+        surf.blit(lbl_over, lbl_over.get_rect(center=(cx, cy - 16)))
         surf.blit(lbl_restart, lbl_restart.get_rect(center=(cx, cy + 10)))
 
         img_data = pygame.image.tostring(surf, "RGBA", True)
@@ -101,8 +104,15 @@ class GameOverScreen:
         gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
         gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
         gl.glTexImage2D(
-            gl.GL_TEXTURE_2D, 0, gl.GL_RGBA,
-            w, h, 0, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, img_data,
+            gl.GL_TEXTURE_2D,
+            0,
+            gl.GL_RGBA,
+            w,
+            h,
+            0,
+            gl.GL_RGBA,
+            gl.GL_UNSIGNED_BYTE,
+            img_data,
         )
 
         renderer.textures[self._TEX_NAME] = {"id": tex_id, "width": w, "height": h}
@@ -119,7 +129,8 @@ class GameOverScreen:
 
         renderer.draw_sprite(
             self._TEX_NAME,
-            0.0, 0.0,
+            0.0,
+            0.0,
             float(LOGICAL_WIDTH),
             float(LOGICAL_HEIGHT),
         )
@@ -127,16 +138,18 @@ class GameOverScreen:
         renderer.camera_x = cam_x_bkp
         renderer.camera_y = cam_y_bkp
 
+
 class HudInfo:
     """Renderiza a pontuação e a fase atual na tela.
     Gera as texturas apenas quando seus valores mudam para otimizar.
     """
+
     _TEX_NAME = "_hud_info_overlay"
 
     def __init__(self) -> None:
         self.last_score = -1
         self.last_level = -1
-        
+
     def render(self, renderer: Renderer, score: int, level: int) -> None:
         if score != self.last_score or level != self.last_level:
             self._build(renderer, score, level)
@@ -150,7 +163,8 @@ class HudInfo:
 
         renderer.draw_sprite(
             self._TEX_NAME,
-            0.0, 0.0,
+            0.0,
+            0.0,
             float(LOGICAL_WIDTH),
             float(LOGICAL_HEIGHT),
         )
@@ -176,30 +190,54 @@ class HudInfo:
         surf.blit(lbl_level, (w - lbl_level.get_width() - 10, 25))
 
         img_data = pygame.image.tostring(surf, "RGBA", True)
-        
+
         # Reaproveita ID ou gera novo
         if self._TEX_NAME in renderer.textures:
             tex_id = renderer.textures[self._TEX_NAME]["id"]
             gl.glBindTexture(gl.GL_TEXTURE_2D, tex_id)
             gl.glTexImage2D(
-                gl.GL_TEXTURE_2D, 0, gl.GL_RGBA,
-                w, h, 0, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, img_data,
+                gl.GL_TEXTURE_2D,
+                0,
+                gl.GL_RGBA,
+                w,
+                h,
+                0,
+                gl.GL_RGBA,
+                gl.GL_UNSIGNED_BYTE,
+                img_data,
             )
         else:
             tex_id = gl.glGenTextures(1)
             gl.glBindTexture(gl.GL_TEXTURE_2D, tex_id)
-            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_CLAMP_TO_EDGE)
-            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_CLAMP_TO_EDGE)
-            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
-            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
+            gl.glTexParameteri(
+                gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_CLAMP_TO_EDGE
+            )
+            gl.glTexParameteri(
+                gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_CLAMP_TO_EDGE
+            )
+            gl.glTexParameteri(
+                gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST
+            )
+            gl.glTexParameteri(
+                gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST
+            )
             gl.glTexImage2D(
-                gl.GL_TEXTURE_2D, 0, gl.GL_RGBA,
-                w, h, 0, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, img_data,
+                gl.GL_TEXTURE_2D,
+                0,
+                gl.GL_RGBA,
+                w,
+                h,
+                0,
+                gl.GL_RGBA,
+                gl.GL_UNSIGNED_BYTE,
+                img_data,
             )
             renderer.textures[self._TEX_NAME] = {"id": tex_id, "width": w, "height": h}
 
+
 class LevelTransitionScreen:
     """Sobreposição exibida durante os segundos de transição de fase."""
+
     _TEX_NAME = "_level_transition_overlay"
 
     def __init__(self) -> None:
@@ -210,6 +248,68 @@ class LevelTransitionScreen:
             self._build(renderer, target_level_idx)
             self.last_target_level = target_level_idx
 
+
+class VictoryScreen:
+    """Sobreposição de Vitória renderizada ao completar todas as fases."""
+
+    _TEX_NAME = "_victory_overlay"
+
+    def __init__(self) -> None:
+        self._built = False
+
+    def _build(self, renderer: Renderer) -> None:
+        w = LOGICAL_WIDTH
+        h = LOGICAL_HEIGHT
+
+        surf = pygame.Surface((w, h), pygame.SRCALPHA)
+        surf.fill((0, 100, 0, 180))  # fundo verde semi-transparente
+
+        try:
+            font_big = pygame.font.SysFont("Arial", 22, bold=True)
+            font_small = pygame.font.SysFont("Arial", 10)
+        except Exception:
+            font_big = pygame.font.Font(None, 22)
+            font_small = pygame.font.Font(None, 10)
+
+        lbl_win = font_big.render("MISSÃO CUMPRIDA!", True, (100, 255, 100))
+        lbl_msg = font_small.render(
+            "Você salvou a floresta panda!", True, (255, 255, 255)
+        )
+        lbl_restart = font_small.render(
+            "Aperte  R  para jogar novamente", True, (220, 220, 220)
+        )
+
+        cx, cy = w // 2, h // 2
+        surf.blit(lbl_win, lbl_win.get_rect(center=(cx, cy - 25)))
+        surf.blit(lbl_msg, lbl_msg.get_rect(center=(cx, cy - 2)))
+        surf.blit(lbl_restart, lbl_restart.get_rect(center=(cx, cy + 20)))
+
+        img_data = pygame.image.tostring(surf, "RGBA", True)
+        tex_id = gl.glGenTextures(1)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, tex_id)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_CLAMP_TO_EDGE)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_CLAMP_TO_EDGE)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
+        gl.glTexImage2D(
+            gl.GL_TEXTURE_2D,
+            0,
+            gl.GL_RGBA,
+            w,
+            h,
+            0,
+            gl.GL_RGBA,
+            gl.GL_UNSIGNED_BYTE,
+            img_data,
+        )
+
+        renderer.textures[self._TEX_NAME] = {"id": tex_id, "width": w, "height": h}
+        self._built = True
+
+    def render(self, renderer: Renderer) -> None:
+        if not self._built:
+            self._build(renderer)
+
         cam_x_bkp = renderer.camera_x
         cam_y_bkp = renderer.camera_y
         renderer.camera_x = 0.0
@@ -217,7 +317,8 @@ class LevelTransitionScreen:
 
         renderer.draw_sprite(
             self._TEX_NAME,
-            0.0, 0.0,
+            0.0,
+            0.0,
             float(LOGICAL_WIDTH),
             float(LOGICAL_HEIGHT),
         )
@@ -239,31 +340,55 @@ class LevelTransitionScreen:
             font_small = pygame.font.Font(None, 10)
 
         lbl_over = font_big.render("FASE COMPLETA!", True, (60, 230, 60))
-        lbl_restart = font_small.render(f"Carregando Fase {target_level_idx + 1}...", True, (220, 220, 220))
+        lbl_restart = font_small.render(
+            f"Carregando Fase {target_level_idx + 1}...", True, (220, 220, 220)
+        )
 
         cx, cy = w // 2, h // 2
         surf.blit(lbl_over, lbl_over.get_rect(center=(cx, cy - 16)))
         surf.blit(lbl_restart, lbl_restart.get_rect(center=(cx, cy + 10)))
 
         img_data = pygame.image.tostring(surf, "RGBA", True)
-        
+
         # Reaproveita a textura ou gera uma nova
         if self._TEX_NAME in renderer.textures:
             tex_id = renderer.textures[self._TEX_NAME]["id"]
             gl.glBindTexture(gl.GL_TEXTURE_2D, tex_id)
             gl.glTexImage2D(
-                gl.GL_TEXTURE_2D, 0, gl.GL_RGBA,
-                w, h, 0, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, img_data,
+                gl.GL_TEXTURE_2D,
+                0,
+                gl.GL_RGBA,
+                w,
+                h,
+                0,
+                gl.GL_RGBA,
+                gl.GL_UNSIGNED_BYTE,
+                img_data,
             )
         else:
             tex_id = gl.glGenTextures(1)
             gl.glBindTexture(gl.GL_TEXTURE_2D, tex_id)
-            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_CLAMP_TO_EDGE)
-            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_CLAMP_TO_EDGE)
-            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
-            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
+            gl.glTexParameteri(
+                gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_CLAMP_TO_EDGE
+            )
+            gl.glTexParameteri(
+                gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_CLAMP_TO_EDGE
+            )
+            gl.glTexParameteri(
+                gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST
+            )
+            gl.glTexParameteri(
+                gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST
+            )
             gl.glTexImage2D(
-                gl.GL_TEXTURE_2D, 0, gl.GL_RGBA,
-                w, h, 0, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, img_data,
+                gl.GL_TEXTURE_2D,
+                0,
+                gl.GL_RGBA,
+                w,
+                h,
+                0,
+                gl.GL_RGBA,
+                gl.GL_UNSIGNED_BYTE,
+                img_data,
             )
             renderer.textures[self._TEX_NAME] = {"id": tex_id, "width": w, "height": h}

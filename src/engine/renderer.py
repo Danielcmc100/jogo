@@ -2,6 +2,7 @@ import OpenGL.GL as gl
 import pygame
 from typing import TypedDict, Any
 import ctypes
+import math
 
 class TextureData(TypedDict):
     id: int
@@ -83,12 +84,33 @@ class Renderer:
             -(right + left) / (right - left), -(top + bottom) / (top - bottom), -(z_far + z_near) / (z_far - z_near), 1.0
         ]
 
-    def _get_model_matrix(self, x: float, y: float, w: float, h: float) -> list[float]:
+    def _get_model_matrix(self, x: float, y: float, w: float, h: float, angle: float = 0.0) -> list[float]:
+        if angle == 0.0:
+            return [
+                float(w), 0.0, 0.0, 0.0,
+                0.0, float(h), 0.0, 0.0,
+                0.0, 0.0, 1.0, 0.0,
+                float(x), float(y), 0.0, 1.0
+            ]
+            
+        rad = math.radians(angle)
+        c = math.cos(rad)
+        s = math.sin(rad)
+        
+        # Rotação ao redor do centro do sprite
+        # M = T(x+w/2, y+h/2) * R(angle) * T(-w/2, -h/2) * S(w, h)
+        m00 = w * c
+        m01 = w * s
+        m10 = -h * s
+        m11 = h * c
+        tx = x + 0.5 * w - (0.5 * w * c - 0.5 * h * s)
+        ty = y + 0.5 * h - (0.5 * w * s + 0.5 * h * c)
+        
         return [
-            w,   0.0, 0.0, 0.0,
-            0.0, h,   0.0, 0.0,
+            float(m00), float(m01), 0.0, 0.0,
+            float(m10), float(m11), 0.0, 0.0,
             0.0, 0.0, 1.0, 0.0,
-            x,   y,   0.0, 1.0
+            float(tx),  float(ty),  0.0, 1.0
         ]
         
     def _get_view_matrix(self) -> list[float]:
@@ -102,7 +124,8 @@ class Renderer:
 
     def draw_sprite(self, texture_name: str, x: float, y: float, w: float, h: float,
                     uv_x: float = 0.0, uv_y: float = 0.0, uv_w: float = 1.0, uv_h: float = 1.0,
-                    tint: tuple[float, float, float, float] | None = None) -> None:
+                    tint: tuple[float, float, float, float] | None = None,
+                    angle: float = 0.0) -> None:
         """Renderiza um sprite.
 
         Parâmetro ``tint``
@@ -116,7 +139,7 @@ class Renderer:
 
         projection = self._get_ortho(0.0, self.screen_width, self.screen_height, 0.0)
         view = self._get_view_matrix()
-        model = self._get_model_matrix(round(x), round(y), round(w), round(h))
+        model = self._get_model_matrix(round(x), round(y), round(w), round(h), angle)
 
         self.shader.set_mat4("projection", (ctypes.c_float * 16)(*projection))
         self.shader.set_mat4("view", (ctypes.c_float * 16)(*view))
@@ -156,7 +179,8 @@ class Renderer:
         gl.glBindVertexArray(0)
 
     def draw_ui_sprite(self, texture_name: str, x: float, y: float, w: float, h: float, 
-                        uv_x: float = 0.0, uv_y: float = 0.0, uv_w: float = 1.0, uv_h: float = 1.0) -> None:
+                        uv_x: float = 0.0, uv_y: float = 0.0, uv_w: float = 1.0, uv_h: float = 1.0,
+                        angle: float = 0.0) -> None:
         """Draws a sprite without camera transformation (UI layer)."""
         self.shader.use()
         
@@ -168,7 +192,7 @@ class Renderer:
             0.0, 0.0, 1.0, 0.0,
             0.0, 0.0, 0.0, 1.0
         ]
-        model = self._get_model_matrix(round(x), round(y), round(w), round(h))
+        model = self._get_model_matrix(round(x), round(y), round(w), round(h), angle)
         
         self.shader.set_mat4("projection", (ctypes.c_float * 16)(*projection))
         self.shader.set_mat4("view", (ctypes.c_float * 16)(*view))
