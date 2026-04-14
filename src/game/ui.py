@@ -7,11 +7,9 @@ O número no nome corresponde diretamente ao valor de hp:
   hp=5 → ui_hp_5  (vida cheia)
   hp=0 → ui_hp_0  (morto)
 
-GameOverScreen
+GameOverScreen / HudInfo
 --------------
-Renderiza uma textura gerada dinamicamente via Pygame (texto "GAME OVER" +
-instrução de reinício) sobre um fundo semi-transparente escuro, usando
-draw_sprite do renderer para manter tudo no pipeline OpenGL.
+Renderiza texturas geradas dinamicamente via Pygame.
 """
 from __future__ import annotations
 
@@ -128,3 +126,74 @@ class GameOverScreen:
 
         renderer.camera_x = cam_x_bkp
         renderer.camera_y = cam_y_bkp
+
+class HudInfo:
+    """Renderiza a pontuação e a fase atual na tela.
+    Gera as texturas apenas quando seus valores mudam para otimizar.
+    """
+    _TEX_NAME = "_hud_info_overlay"
+
+    def __init__(self) -> None:
+        self.last_score = -1
+        self.last_level = -1
+        
+    def render(self, renderer: Renderer, score: int, level: int) -> None:
+        if score != self.last_score or level != self.last_level:
+            self._build(renderer, score, level)
+            self.last_score = score
+            self.last_level = level
+
+        cam_x_bkp = renderer.camera_x
+        cam_y_bkp = renderer.camera_y
+        renderer.camera_x = 0.0
+        renderer.camera_y = 0.0
+
+        renderer.draw_sprite(
+            self._TEX_NAME,
+            0.0, 0.0,
+            float(LOGICAL_WIDTH),
+            float(LOGICAL_HEIGHT),
+        )
+
+        renderer.camera_x = cam_x_bkp
+        renderer.camera_y = cam_y_bkp
+
+    def _build(self, renderer: Renderer, score: int, level: int) -> None:
+        w = LOGICAL_WIDTH
+        h = LOGICAL_HEIGHT
+        surf = pygame.Surface((w, h), pygame.SRCALPHA)
+
+        try:
+            font = pygame.font.SysFont("Arial", 12, bold=True)
+        except Exception:
+            font = pygame.font.Font(None, 12)
+
+        lbl_score = font.render(f"Pontos: {score}", True, (255, 255, 0))
+        lbl_level = font.render(f"Fase: {level + 1}", True, (255, 255, 255))
+
+        # Posiciona no canto superior direito
+        surf.blit(lbl_score, (w - lbl_score.get_width() - 10, 10))
+        surf.blit(lbl_level, (w - lbl_level.get_width() - 10, 25))
+
+        img_data = pygame.image.tostring(surf, "RGBA", True)
+        
+        # Reaproveita ID ou gera novo
+        if self._TEX_NAME in renderer.textures:
+            tex_id = renderer.textures[self._TEX_NAME]["id"]
+            gl.glBindTexture(gl.GL_TEXTURE_2D, tex_id)
+            gl.glTexImage2D(
+                gl.GL_TEXTURE_2D, 0, gl.GL_RGBA,
+                w, h, 0, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, img_data,
+            )
+        else:
+            tex_id = gl.glGenTextures(1)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, tex_id)
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_CLAMP_TO_EDGE)
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_CLAMP_TO_EDGE)
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
+            gl.glTexImage2D(
+                gl.GL_TEXTURE_2D, 0, gl.GL_RGBA,
+                w, h, 0, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, img_data,
+            )
+            renderer.textures[self._TEX_NAME] = {"id": tex_id, "width": w, "height": h}

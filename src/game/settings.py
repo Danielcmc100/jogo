@@ -75,12 +75,12 @@ SNAKE_ANIMATIONS: dict[str, tuple[int, int, float]] = {
 }
 
 # Comportamento da cobra
-SNAKE_SPEED: float = 60.0            # px/s de movimento horizontal
-SNAKE_DETECTION_RANGE: float = 120.0 # distância pra detectar o player
+SNAKE_SPEED: float = 30.0            # px/s de movimento horizontal
+SNAKE_DETECTION_RANGE: float = 60.0 # distância pra detectar o player
 SNAKE_ATTACK_RANGE: float = 80.0     # distância pra disparar a bola de fogo
-SNAKE_ATTACK_COOLDOWN: float = 2.5   # segundos entre ataques
+SNAKE_ATTACK_COOLDOWN: float = 4.0   # segundos entre ataques
 SNAKE_MAX_HP: int = 2                # hits para matar a cobra
-SNAKE_HIT_INVINCIBILITY: float = 0.4 # segundos de invencibilidade pós-hit
+SNAKE_HIT_INVINCIBILITY: float = 0.1 # segundos de invencibilidade pós-hit
 
 # ---------------------------------------------------------------------------
 # npc_fire1.png — 32x16, frames de 8x16 (4 colunas × 1 linha)
