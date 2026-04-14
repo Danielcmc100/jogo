@@ -13,7 +13,7 @@ PLAYER_INVINCIBILITY_TIME: float = 1.0  # segundos de invencibilidade após dano
 
 
 # Tile Sizes
-TILE_SIZE = 32
+TILE_SIZE = 16
 
 # ---------------------------------------------------------------------------
 # char_panda.png — 256x256, frames de 32x32 (8 colunas × 8 linhas)
