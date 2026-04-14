@@ -7,7 +7,7 @@ O número no nome corresponde diretamente ao valor de hp:
   hp=5 → ui_hp_5  (vida cheia)
   hp=0 → ui_hp_0  (morto)
 
-GameOverScreen / HudInfo
+GameOverScreen / HudInfo / LevelTransitionScreen
 --------------
 Renderiza texturas geradas dinamicamente via Pygame.
 """
@@ -178,6 +178,76 @@ class HudInfo:
         img_data = pygame.image.tostring(surf, "RGBA", True)
         
         # Reaproveita ID ou gera novo
+        if self._TEX_NAME in renderer.textures:
+            tex_id = renderer.textures[self._TEX_NAME]["id"]
+            gl.glBindTexture(gl.GL_TEXTURE_2D, tex_id)
+            gl.glTexImage2D(
+                gl.GL_TEXTURE_2D, 0, gl.GL_RGBA,
+                w, h, 0, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, img_data,
+            )
+        else:
+            tex_id = gl.glGenTextures(1)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, tex_id)
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_CLAMP_TO_EDGE)
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_CLAMP_TO_EDGE)
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
+            gl.glTexImage2D(
+                gl.GL_TEXTURE_2D, 0, gl.GL_RGBA,
+                w, h, 0, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, img_data,
+            )
+            renderer.textures[self._TEX_NAME] = {"id": tex_id, "width": w, "height": h}
+
+class LevelTransitionScreen:
+    """Sobreposição exibida durante os segundos de transição de fase."""
+    _TEX_NAME = "_level_transition_overlay"
+
+    def __init__(self) -> None:
+        self.last_target_level = -1
+
+    def render(self, renderer: Renderer, target_level_idx: int) -> None:
+        if target_level_idx != self.last_target_level:
+            self._build(renderer, target_level_idx)
+            self.last_target_level = target_level_idx
+
+        cam_x_bkp = renderer.camera_x
+        cam_y_bkp = renderer.camera_y
+        renderer.camera_x = 0.0
+        renderer.camera_y = 0.0
+
+        renderer.draw_sprite(
+            self._TEX_NAME,
+            0.0, 0.0,
+            float(LOGICAL_WIDTH),
+            float(LOGICAL_HEIGHT),
+        )
+
+        renderer.camera_x = cam_x_bkp
+        renderer.camera_y = cam_y_bkp
+
+    def _build(self, renderer: Renderer, target_level_idx: int) -> None:
+        w = LOGICAL_WIDTH
+        h = LOGICAL_HEIGHT
+        surf = pygame.Surface((w, h), pygame.SRCALPHA)
+        surf.fill((0, 0, 0, 180))  # fundo escuro translúcido
+
+        try:
+            font_big = pygame.font.SysFont("Arial", 18, bold=True)
+            font_small = pygame.font.SysFont("Arial", 10)
+        except Exception:
+            font_big = pygame.font.Font(None, 18)
+            font_small = pygame.font.Font(None, 10)
+
+        lbl_over = font_big.render("FASE COMPLETA!", True, (60, 230, 60))
+        lbl_restart = font_small.render(f"Carregando Fase {target_level_idx + 1}...", True, (220, 220, 220))
+
+        cx, cy = w // 2, h // 2
+        surf.blit(lbl_over, lbl_over.get_rect(center=(cx, cy - 16)))
+        surf.blit(lbl_restart, lbl_restart.get_rect(center=(cx, cy + 10)))
+
+        img_data = pygame.image.tostring(surf, "RGBA", True)
+        
+        # Reaproveita a textura ou gera uma nova
         if self._TEX_NAME in renderer.textures:
             tex_id = renderer.textures[self._TEX_NAME]["id"]
             gl.glBindTexture(gl.GL_TEXTURE_2D, tex_id)

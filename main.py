@@ -5,7 +5,7 @@ from src.game.player import Player
 from src.game.level import Level, LEVELS
 from src.game.background import Background
 from src.game.snake import Snake
-from src.game.ui import HealthBar, GameOverScreen, HudInfo
+from src.game.ui import HealthBar, GameOverScreen, HudInfo, LevelTransitionScreen
 
 def load_stage(level_idx: int) -> tuple[Level, list[Snake], Player]:
     level = Level(level_idx)
@@ -44,6 +44,10 @@ def main() -> None:
     health_bar = HealthBar(screen_x=8, screen_y=8, scale=2.0)
     game_over_scr = GameOverScreen()
     hud_info = HudInfo()
+    transition_scr = LevelTransitionScreen()
+
+    is_transitioning = False
+    transition_timer = 0.0
 
     # ── Loop principal ──────────────────────────────────────────────────
     while window.running:
@@ -72,7 +76,22 @@ def main() -> None:
                     player.x = level.width_px + 10
 
         # ── Update ─────────────────────────────────────────────────────
-        if not game_over:
+        if is_transitioning:
+            transition_timer -= window.dt
+            if transition_timer <= 0.0:
+                current_level_idx += 1
+                if current_level_idx >= len(LEVELS):
+                    current_level_idx = 0
+                
+                level, snakes, new_player = load_stage(current_level_idx)
+                new_player.hp = player.hp # mantém hp do player
+                player = new_player
+                is_transitioning = False
+                
+                window.renderer.camera_x = 0.0
+                window.renderer.camera_y = 0.0
+
+        elif not game_over:
             player.update(window.dt, level.colliders, keys)
             player_rect = player.get_rect()
             attack_rect = player.get_attack_rect()
@@ -113,20 +132,13 @@ def main() -> None:
             if player.is_dead:
                 game_over = True
 
-            # Condição de passar de fase: ultrapassar a borda direita
-            # ou tocar o fim da tela lógica da ponta da fase
-            if player.x > level.width_px - 32:
-                current_level_idx += 1
-                if current_level_idx >= len(LEVELS):
-                    # Zerou o jogo, recomeça =D (poderia ter tela de You Win)
-                    current_level_idx = 0
-                
-                level, snakes, new_player = load_stage(current_level_idx)
-                
-                # Mantém o hp da fase anterior, mas cura 100% como bônus e recompensa
-                new_player.hp = new_player.max_hp 
-                player = new_player
-
+            # Condição de passar de fase: todos os inimigos da tela mortos
+            # Para evitar que fases sem cobra passem automaticamente e se limitem à ação do player,
+            # Se não quiser que fases sem cobra passem imediatamente, precisaria checar len(level.snakes) > 0 também.
+            if len(snakes) == 0 and not is_transitioning:
+                is_transitioning = True
+                transition_timer = 2.0  # Mensagem de 2 segundos
+                 
             # ── Câmera — clamped nos limites do mapa ───────────────────
             target_cam_x = player.x - LOGICAL_WIDTH / 2.0 + player.w / 2.0
             target_cam_y = player.y - LOGICAL_HEIGHT / 2.0 + player.h / 2.0
@@ -160,6 +172,9 @@ def main() -> None:
         # UI — fixada na tela
         health_bar.render(window.renderer, player.hp)
         hud_info.render(window.renderer, score, current_level_idx)
+
+        if is_transitioning:
+            transition_scr.render(window.renderer, current_level_idx + 1 if current_level_idx + 1 < len(LEVELS) else 0)
 
         if game_over:
             game_over_scr.render(window.renderer)
