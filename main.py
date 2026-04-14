@@ -95,7 +95,7 @@ def main() -> None:
                     current_level_idx = 0
 
                 level, snakes, new_player = load_stage(current_level_idx)
-                new_player.hp = player.hp  # mantém hp do player
+                # O novo player já surge com a vida cheia (PLAYER_MAX_HP)
                 player = new_player
                 is_transitioning = False
 

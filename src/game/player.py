@@ -22,9 +22,9 @@ class Player:
     def __init__(self, x: float, y: float):
         self.x = x
         self.y = y
-        # We define a slightly smaller hitbox than the frame for better platforming
-        self.w = PLAYER_FRAME_WIDTH * 0.8
-        self.h = PLAYER_FRAME_HEIGHT * 0.8
+        # Hitbox reduzida para o player transitar melhor por tiles menores (ex: 16x16)
+        self.w = PLAYER_FRAME_WIDTH * 0.6  # pouco mais fino no eixo X
+        self.h = 16.0                      # altura focada nas pernas/pés
 
         self.vx = 0.0
         self.vy = 0.0
