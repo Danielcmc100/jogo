@@ -8,7 +8,8 @@ SCREEN_HEIGHT = LOGICAL_HEIGHT * WINDOW_SCALE
 GRAVITY = 900.0
 PLAYER_SPEED = 200.0
 JUMP_FORCE = -400.0
-PLAYER_MAX_HP = 4
+PLAYER_MAX_HP: int = 5           # vida cheia = sprite ui_hp_5
+PLAYER_INVINCIBILITY_TIME: float = 1.0  # segundos de invencibilidade após dano
 
 
 # Tile Sizes

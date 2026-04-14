@@ -1,28 +1,130 @@
+"""UI — barra de vida e tela de Game Over.
+
+Sprites de HP
+-------------
+ui_hp_0.png … ui_hp_5.png — cada arquivo é 32×16 px (sprite único, sem atlas).
+O número no nome corresponde diretamente ao valor de hp:
+  hp=5 → ui_hp_5  (vida cheia)
+  hp=0 → ui_hp_0  (morto)
+
+GameOverScreen
+--------------
+Renderiza uma textura gerada dinamicamente via Pygame (texto "GAME OVER" +
+instrução de reinício) sobre um fundo semi-transparente escuro, usando
+draw_sprite do renderer para manter tudo no pipeline OpenGL.
+"""
+from __future__ import annotations
+
+import pygame
+import OpenGL.GL as gl
+
 from src.engine.renderer import Renderer
+from src.game.settings import LOGICAL_WIDTH, LOGICAL_HEIGHT, PLAYER_MAX_HP
+
+# Tamanho real de cada sprite de HP (pixels lógicos)
+HP_SPRITE_W = 32
+HP_SPRITE_H = 16
+
 
 class HealthBar:
-    def __init__(self, x: float, y: float, scale: float = 1.0):
-        self.x = x
-        self.y = y
+    """Exibe o sprite de vida correspondente ao HP atual do player.
+
+    Parâmetros
+    ----------
+    screen_x, screen_y:
+        Posição fixa na tela lógica (não afetada pela câmera).
+    scale:
+        Multiplicador de escala de exibição (default 2 → 64×32 px).
+    """
+
+    def __init__(self, screen_x: int, screen_y: int, scale: float = 2.0) -> None:
+        self.screen_x = screen_x
+        self.screen_y = screen_y
         self.scale = scale
-        
+
     def render(self, renderer: Renderer, hp: int) -> None:
-        # Texture name mapping: ui_hp_0, ui_hp_1, etc.
-        hp_clamped = max(0, min(4, int(hp)))
-        texture_name = f"ui_hp_{hp_clamped}"
-        
-        # Get texture dimensions for scaling
-        if texture_name in renderer.textures:
-            tex = renderer.textures[texture_name]
-            # Ensure integer dimensions for pixel perfection
-            scale_int = int(self.scale)
-            w = int(tex["width"] * scale_int)
-            h = int(tex["height"] * scale_int)
-            
-            renderer.draw_ui_sprite(
-                texture_name,
-                int(self.x),
-                int(self.y),
-                w,
-                h
-            )
+        hp_clamped = max(0, min(PLAYER_MAX_HP, hp))
+        tex_name = f"ui_hp_{hp_clamped}"
+
+        w = HP_SPRITE_W * self.scale
+        h = HP_SPRITE_H * self.scale
+
+        # Renderiza em coordenada de tela fixa (camera zerada temporariamente)
+        cam_x_bkp = renderer.camera_x
+        cam_y_bkp = renderer.camera_y
+        renderer.camera_x = 0.0
+        renderer.camera_y = 0.0
+
+        renderer.draw_sprite(tex_name, self.screen_x, self.screen_y, w, h)
+
+        renderer.camera_x = cam_x_bkp
+        renderer.camera_y = cam_y_bkp
+
+
+class GameOverScreen:
+    """Sobreposição de Game Over renderizada sobre o jogo.
+
+    Gera uma textura com o texto via Pygame Surface e a envia ao renderer
+    OpenGL na primeira chamada. Reutilizada nos frames seguintes.
+    """
+
+    _TEX_NAME = "_game_over_overlay"
+
+    def __init__(self) -> None:
+        self._built = False
+
+    def _build(self, renderer: Renderer) -> None:
+        """Gera o overlay como textura OpenGL via Pygame."""
+        w = LOGICAL_WIDTH
+        h = LOGICAL_HEIGHT
+
+        surf = pygame.Surface((w, h), pygame.SRCALPHA)
+        surf.fill((0, 0, 0, 180))  # fundo escuro semi-transparente
+
+        try:
+            font_big   = pygame.font.SysFont("Arial", 18, bold=True)
+            font_small = pygame.font.SysFont("Arial", 9)
+        except Exception:
+            font_big   = pygame.font.Font(None, 18)
+            font_small = pygame.font.Font(None, 9)
+
+        lbl_over    = font_big.render("GAME OVER", True, (230, 60, 60))
+        lbl_restart = font_small.render("Aperte  R  para reiniciar", True, (220, 220, 220))
+
+        cx, cy = w // 2, h // 2
+        surf.blit(lbl_over,    lbl_over.get_rect(center=(cx, cy - 16)))
+        surf.blit(lbl_restart, lbl_restart.get_rect(center=(cx, cy + 10)))
+
+        img_data = pygame.image.tostring(surf, "RGBA", True)
+        tex_id = gl.glGenTextures(1)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, tex_id)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_CLAMP_TO_EDGE)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_CLAMP_TO_EDGE)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
+        gl.glTexImage2D(
+            gl.GL_TEXTURE_2D, 0, gl.GL_RGBA,
+            w, h, 0, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, img_data,
+        )
+
+        renderer.textures[self._TEX_NAME] = {"id": tex_id, "width": w, "height": h}
+        self._built = True
+
+    def render(self, renderer: Renderer) -> None:
+        if not self._built:
+            self._build(renderer)
+
+        cam_x_bkp = renderer.camera_x
+        cam_y_bkp = renderer.camera_y
+        renderer.camera_x = 0.0
+        renderer.camera_y = 0.0
+
+        renderer.draw_sprite(
+            self._TEX_NAME,
+            0.0, 0.0,
+            float(LOGICAL_WIDTH),
+            float(LOGICAL_HEIGHT),
+        )
+
+        renderer.camera_x = cam_x_bkp
+        renderer.camera_y = cam_y_bkp

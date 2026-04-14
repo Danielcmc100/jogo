@@ -11,6 +11,7 @@ from src.game.settings import (
     PLAYER_TEX_HEIGHT,
     PLAYER_ANIMATIONS,
     PLAYER_MAX_HP,
+    PLAYER_INVINCIBILITY_TIME,
 )
 
 
@@ -33,8 +34,18 @@ class Player:
         self.anim_timer = 0.0
         self.current_frame = 0
 
-        self.max_hp = PLAYER_MAX_HP
-        self.hp = PLAYER_MAX_HP
+        self.max_hp: int = PLAYER_MAX_HP
+        self.hp: int = PLAYER_MAX_HP
+        # Tempo de invencibilidade restante após tomar dano
+        self._invincibility_timer: float = 0.0
+
+    @property
+    def is_dead(self) -> bool:
+        return self.hp <= 0
+
+    @property
+    def is_invincible(self) -> bool:
+        return self._invincibility_timer > 0.0
 
     def get_rect(self) -> Rect:
         # Give a little offset to center the hitbox horizontally
@@ -58,6 +69,10 @@ class Player:
 
         # --- Physics ---
         self.vy += GRAVITY * dt
+
+        # Decrementa invencibilidade
+        if self._invincibility_timer > 0.0:
+            self._invincibility_timer = max(0.0, self._invincibility_timer - dt)
 
         # Integration & X Collision
         self.x += self.vx * dt
@@ -147,12 +162,28 @@ class Player:
             uv_h,
         )
 
-    def take_damage(self, amount: int) -> None:
-        self.hp -= amount
-        if self.hp < 0:
-            self.hp = 0
-            
+    def take_damage(self, amount: int, knockback_vx: float = 0.0) -> bool:
+        """Aplica dano. Retorna True se o dano foi efetivado (não invencível)."""
+        if self.is_invincible or self.is_dead:
+            return False
+        self.hp = max(0, self.hp - amount)
+        self._invincibility_timer = PLAYER_INVINCIBILITY_TIME
+        if knockback_vx != 0.0:
+            self.vx = knockback_vx
+            self.vy = -180.0  # pequeno salto de knockback
+        return True
+
     def heal(self, amount: int) -> None:
-        self.hp += amount
-        if self.hp > self.max_hp:
-            self.hp = self.max_hp
+        self.hp = min(self.max_hp, self.hp + amount)
+
+    def reset(self, x: float, y: float) -> None:
+        """Reinicia o player para um novo jogo."""
+        self.x = x
+        self.y = y
+        self.vx = 0.0
+        self.vy = 0.0
+        self.hp = self.max_hp
+        self._invincibility_timer = 0.0
+        self.state = "idle"
+        self.current_frame = 0
+        self.anim_timer = 0.0
