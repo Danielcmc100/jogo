@@ -8,14 +8,14 @@ from src.game.snake import Snake
 from src.game.ui import HealthBar, GameOverScreen
 
 # Posição de spawn do player (acima do chão, row 14)
-PLAYER_SPAWN_X = 500.0
-PLAYER_SPAWN_Y = 1000
+PLAYER_SPAWN_X = 50.0
+PLAYER_SPAWN_Y = 300.0
 
 
 def _make_snakes() -> list[Snake]:
     return [
-        Snake(x=320, y=480, patrol_left=288, patrol_right=480),
-        Snake(x=800, y=480, patrol_left=704, patrol_right=960),
+        Snake(x=300, y=200, patrol_left=200, patrol_right=400),
+        Snake(x=550, y=200, patrol_left=450, patrol_right=650),
     ]
 
 
