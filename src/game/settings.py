@@ -8,7 +8,7 @@ SCREEN_HEIGHT = LOGICAL_HEIGHT * WINDOW_SCALE
 GRAVITY = 900.0
 PLAYER_SPEED = 200.0
 JUMP_FORCE = -400.0
-PLAYER_MAX_HP: int = 5           # vida cheia = sprite ui_hp_5
+PLAYER_MAX_HP: int = 5  # vida cheia = sprite ui_hp_5
 PLAYER_INVINCIBILITY_TIME: float = 1.0  # segundos de invencibilidade após dano
 
 
@@ -41,14 +41,14 @@ PLAYER_ANIMATIONS: dict[str, tuple[int, int, float]] = {
 # Layout da spritesheet:
 #   Bloco de terra sólida: coluna 0, linha 0
 # ---------------------------------------------------------------------------
-TILE_FRAME_WIDTH: int = 32
-TILE_FRAME_HEIGHT: int = 32
+TILE_FRAME_WIDTH: int = 16
+TILE_FRAME_HEIGHT: int = 16
 TILE_TEX_WIDTH: float = 128.0
 TILE_TEX_HEIGHT: float = 128.0
 
 # Coordenadas do tile sólido (coluna, linha) dentro da sheet
-SOLID_TILE_COL: int = 0
-SOLID_TILE_ROW: int = 0
+SOLID_TILE_COL: int = 1
+SOLID_TILE_ROW: int = 7
 
 # ---------------------------------------------------------------------------
 # npc_snake.png — 72x48, frames de 24x24 (3 colunas × 2 linhas)
